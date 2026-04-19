@@ -17,9 +17,9 @@ local LocalPlayer = Players.LocalPlayer;
 local PlayerGui = LocalPlayer.PlayerGui;
 local Mouse = LocalPlayer:GetMouse();
 
-if game.PlaceId == 6137321701 then StarterGui:SetCore("SendNotification", { Title = "Paradoxium"; Text = "No Loading in Lobby!"; }); return; end
+if game.PlaceId == 6137321701 then StarterGui:SetCore("SendNotification", { Title = "NeoPulse"; Text = "No Loading in Lobby!"; }); return; end
 
-StarterGui:SetCore("SendNotification", { Title = "Paradoxium"; Text = "Loading Blair Script!"; });
+StarterGui:SetCore("SendNotification", { Title = "NeoPulse"; Text = "Loading Blair Script!"; });
 local Success, Result = pcall(function()
 	print("Loading Blair Script!");
 	repeat task.wait(.1) until game.Workspace:FindFirstChild(LocalPlayer.Name);
@@ -65,7 +65,7 @@ local Success, Result = pcall(function()
 		["SideStatus"] = false;
 		["SideStatusScale"] = "1";
 	}
-	local Directory = "Paradoxium/Blair"
+	local Directory = "NeoPulse/Blair"
 	local File_Name = "Settings.json"
 	Config = Utility:LoadConfig(Config, Directory, File_Name);
 
@@ -1137,12 +1137,12 @@ if Success then
 	Embed:Append("Success Execution");
 	Embed:SetColor(Color3.fromRGB(0, 255, 0));
 	Embed:SetTimestamp(os.time());
-	StarterGui:SetCore("SendNotification", { Title = "Paradoxium"; Text = "Successfully Loaded Script!"; });
+	StarterGui:SetCore("SendNotification", { Title = "NeoPulse"; Text = "Successfully Loaded Script!"; });
 else
 	Embed:AppendLine("Error Execution");
 	Embed:Append(Result);
 	Embed:SetColor(Color3.fromRGB(255, 0, 0));
 	Embed:SetTimestamp(os.time());
-	StarterGui:SetCore("SendNotification", { Title = "Paradoxium"; Text = "Error Loading Script!"; });
+	StarterGui:SetCore("SendNotification", { Title = "NeoPulse"; Text = "Error Loading Script!"; });
 	error(Result);
 end
