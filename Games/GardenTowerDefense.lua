@@ -16,6 +16,7 @@ local Library = loadstring(game:HttpGet(ObsidianRepo .. "Library.lua"))();
 
 local Loading = Library:CreateLoading({
     Title = "NeoPulse",
+    Icon = 0,
     TotalSteps = 4,
 });
 
@@ -214,7 +215,7 @@ MacroManagerTab:AddButton({
 });
 
 -- ── Game Manager ───────────────────────────────────────────────
-if Workspace:GetAttribute("Difficulty") == "dif_endless" then
+if Workspace:GetAttribute("Difficulty") ~= "dif_endless" then
     local Difficulties_Values = UTILITY_LIBRARY:GetTableKeys(DATA_LIBRARY["DIFFICULTY_LIST"]);
     if Workspace:GetAttribute("IsLobby") == false and Workspace:GetAttribute("MapId") ~= "map_halloween_event" then
         Difficulties_Values = DATA_LIBRARY["MAPS"][Workspace:GetAttribute("MapName")]["Difficulties"]
@@ -504,7 +505,7 @@ if Workspace:GetAttribute("IsLobby") == false then
     local Counter = 1;
 
     local function GetMacro()
-        if Workspace:GetAttribute("Difficulty") == "dif_endless" then
+        if Workspace:GetAttribute("Difficulty") ~= "dif_endless" then
             if Options[Workspace:GetAttribute("MapId").."_classic"].Value ~= nil then
                 return HttpService:JSONDecode(readfile(HUBPATH.."/"..SAVEPATH.."/macro/"..Options[Workspace:GetAttribute("MapId").."_classic"].Value..".json"):gsub("%s", ""));
             end
@@ -626,7 +627,7 @@ if Workspace:GetAttribute("IsLobby") == false then
             if Workspace:GetAttribute("BaseHP") > 0 then
                 if Options["OnVictoryNext"].Value == "Play again" then
                     REMOTEFUNCTIONS_FOLDER["RestartGame"]:InvokeServer();
-                    if Workspace:GetAttribute("Difficulty") == "dif_endless" then
+                    if Workspace:GetAttribute("Difficulty") ~= "dif_endless" then
                         task.wait();
                         REMOTEFUNCTIONS_FOLDER["PlaceDifficultyVote"]:InvokeServer("dif_"..string.lower(Options["MacroAutoDifficulty"].Value));
                         if Options["AutoGameSpeed"].Value ~= "Disable" then
@@ -643,7 +644,7 @@ if Workspace:GetAttribute("IsLobby") == false then
             else
                 if Options["OnDefeatNext"].Value == "Play again" then
                     REMOTEFUNCTIONS_FOLDER["RestartGame"]:InvokeServer();
-                    if Workspace:GetAttribute("Difficulty") == "dif_endless" then
+                    if Workspace:GetAttribute("Difficulty") ~= "dif_endless" then
                         task.wait();
                         REMOTEFUNCTIONS_FOLDER["PlaceDifficultyVote"]:InvokeServer("dif_"..string.lower(Options["MacroAutoDifficulty"].Value));
                         if Options["AutoGameSpeed"].Value ~= "Disable" then
