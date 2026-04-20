@@ -1,1 +1,6 @@
+# File Type
 *.raw.lua
+obf.lua
+
+# Directory
+/prometheus/*

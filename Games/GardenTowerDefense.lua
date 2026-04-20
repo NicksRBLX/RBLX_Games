@@ -509,10 +509,20 @@ Loading:SetDescription("Macro feature...");
 local macroThread = nil;
 local gameThread = nil;
 
+local entityHandler = nil
+
 if Workspace:GetAttribute("IsLobby") == false then
     local MacroData = {};
     local PlacedUnits = {};
+    local QueueID = {};
     local Counter = 1;
+
+    entityHandler = MAP_FOLDER:FindFirstChild("Entities").ChildAdded:Connect(function(entity)
+        local ID = tonumber(entity:GetAttribute("ID"));
+        if not QueueID[ID] then return; end
+        PlacedUnits[QueueID[ID]] = { ["Entity"] = entity, ["ID"] = ID };
+        QueueID[ID] = nil;
+    end);
 
     local function GetMacro()
         if Workspace:GetAttribute("Difficulty") ~= "dif_endless" then
@@ -583,12 +593,10 @@ if Workspace:GetAttribute("IsLobby") == false then
                     continue;
                 end
             end
-            print("Done Macro Checks")
 
             -- Game Running Check
             if Workspace:GetAttribute("GameStartTime") == nil then continue; end
             if Workspace:GetAttribute("GameEndTime") ~= nil then continue; end
-            print("Done Game Checks")
 
             -- Status Lines Update
             task.spawn(function()
@@ -626,11 +634,9 @@ if Workspace:GetAttribute("IsLobby") == false then
                     for i = 4, 5 do MacroStatusLines[i]:SetVisible(false); end
                 end
             end)
-            print("Done Updating Status Lines")
 
             -- Condition Check
             if not ValidateCondition(MacroData[Counter]["Condition"]) then continue; end
-            print("Done Condition Checks")
 
             if MacroData[Counter]["Task"] == "PlaceUnit" then
                 -- Cooldown Check
@@ -652,23 +658,26 @@ if Workspace:GetAttribute("IsLobby") == false then
                 };
                 if MacroData[Counter]["Data"]["PathIndex"] then NewData["PathIndex"] = MacroData[Counter]["Data"]["PathIndex"]; end
                 if MacroData[Counter]["Data"]["DistanceAlongPath"] then NewData["DistanceAlongPath"] = MacroData[Counter]["Data"]["DistanceAlongPath"]; end
+                
                 local valid, id = REMOTEFUNCTIONS_FOLDER["PlaceUnit"]:InvokeServer(MacroData[Counter]["Unit"], NewData);
                 if not valid then continue; end
-                task.wait();
-                repeat
-                    for _, entity in (MAP_FOLDER:FindFirstChild("Entities"):GetChildren()) do
-                        local entityNameSplit = entity.Name:split("_");
-                        if entityNameSplit[1] == "enemy" then continue; end
-                        if tonumber(entity:GetAttribute("ID")) == id then
-                            PlacedUnits[MacroData[Counter]["ID"]] = {
-                                ["Entity"] = entity,
-                                ["ID"] = id
-                            };
-                            break;
-                        end
-                    end
-                    task.wait();
-                until PlacedUnits[MacroData[Counter]["ID"]] ~= nil
+                QueueID[id] = MacroData[Counter]["ID"];
+
+                -- local placed = false;
+                -- while not placed do
+                --     for _, entity in (Workspace:FindFirstChild("Map"):FindFirstChild("Entities"):GetChildren()) do
+                --         local entityNameSplit = entity.Name:split("_");
+                --         if entityNameSplit[1] == "enemy" then continue; end
+                --         if tonumber(entity:GetAttribute("ID")) == id then
+                --             PlacedUnits[MacroData[Counter]["ID"]] = {
+                --                 ["Entity"] = entity,
+                --                 ["ID"] = id
+                --             };
+                --             break;
+                --         end
+                --     end
+                --     task.wait();
+                -- end
             elseif MacroData[Counter]["Task"] == "UpgradeUnit" then
                 -- Valid Unit Check
                 if PlacedUnits[MacroData[Counter]["ID"]] == nil then continue; end
@@ -691,7 +700,6 @@ if Workspace:GetAttribute("IsLobby") == false then
             elseif MacroData[Counter]["Task"] == "SellAll" then
 
             end
-            print("Done Task")
 
             Counter = Counter + 1;
         end
@@ -819,6 +827,12 @@ Library:OnUnload(function()
     if macroThread then
         macroThread:Stop();
         macroThread = nil;
+    end
+
+    -- Disconnect Entity Handler
+    if entityHandler then
+        entityHandler:Disconnect();
+        entityHandler = nil;
     end
 
     -- Stop Game Thread
