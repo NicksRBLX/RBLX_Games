@@ -512,6 +512,13 @@ if Workspace:GetAttribute("IsLobby") == false then
             if Options["GeneralMacro"].Value ~= nil then
                 return HttpService:JSONDecode(readfile(HUBPATH.."/"..SAVEPATH.."/macro/"..Options["GeneralMacro"].Value..".json"):gsub("%s", ""));
             end
+        else
+            if Options[Workspace:GetAttribute("MapId").."_endless"].Value ~= nil then
+                return HttpService:JSONDecode(readfile(HUBPATH.."/"..SAVEPATH.."/macro/"..Options[Workspace:GetAttribute("MapId").."_endless"].Value..".json"):gsub("%s", ""));
+            end
+            if Options["GeneralMacro"].Value ~= nil then
+                return HttpService:JSONDecode(readfile(HUBPATH.."/"..SAVEPATH.."/macro/"..Options["GeneralMacro"].Value..".json"):gsub("%s", ""));
+            end
         end
         return {};
     end
@@ -541,73 +548,104 @@ if Workspace:GetAttribute("IsLobby") == false then
             -- Unloaded Check
             if Library.Unloaded then break; end
 
-            -- Game Running Check
-            if Workspace:GetAttribute("GameStartTime") == nil then continue; end
-            if Workspace:GetAttribute("GameEndTime") ~= nil then continue; end
-
             -- Macro Check
             if not Toggles["EnableMacroToggle"].Value then
                 MacroStatus:SetText("Status: Not Running");
                 for i = 1, 5 do MacroStatusLines[i]:SetVisible(false); end
                 continue;
             else
+                MacroStatus:SetText("Status: Running");
                 if MacroData == {} then continue; end
-                for i = 1, 5 do MacroStatusLines[i]:SetVisible(true); end
                 if #MacroData < Counter then
                     MacroStatus:SetText("Status: Finished");
                     for i = 1, 5 do MacroStatusLines[i]:SetVisible(false); end
                     continue;
                 end
-                MacroStatus:SetText("Status: Running");
             end
+
+            -- Game Running Check
+            if Workspace:GetAttribute("GameStartTime") == nil then continue; end
+            if Workspace:GetAttribute("GameEndTime") ~= nil then continue; end
+
+            -- Status Lines Update
+            task.spawn(function()
+                MacroStatus:SetText("Status: Running ["..Counter.."/"..#MacroData.."]");
+                for i = 1, 5 do MacroStatusLines[i]:SetVisible(false); end
+                MacroStatusLines[1]:SetText("Condition: "..MacroData[Counter]["Condition"]["Type"].." | "..MacroData[Counter]["Condition"]["Data"]);
+                MacroStatusLines[2]:SetText("Task: "..MacroData[Counter]["Task"]);
+
+                if MacroData[Counter]["Task"] == "PlaceUnit" then
+                    MacroStatusLines[3]:SetText("Placing unit: "..MacroData[Counter]["Unit"]);
+                    MacroStatusLines[4]:SetText("Position: ["..MacroData[Counter]["Data"]["Position"][1]..", "..MacroData[Counter]["Data"]["Position"][2]..", "..MacroData[Counter]["Data"]["Position"][3].."]");
+                    MacroStatusLines[5]:SetText("ID: "..MacroData[Counter]["ID"]);
+                    for i = 1, 5 do MacroStatusLines[i]:SetVisible(true); end
+                elseif MacroData[Counter]["Task"] == "UpgradeUnit" then
+                    MacroStatusLines[3]:SetText("Upgrade times: "..MacroData[Counter]["Upgrades"]);
+                    MacroStatusLines[4]:SetText("ID: "..MacroData[Counter]["ID"]);
+                    for i = 1, 4 do MacroStatusLines[i]:SetVisible(true); end
+                elseif MacroData[Counter]["Task"] == "SellUnit" then
+                    MacroStatusLines[3]:SetText("ID: "..MacroData[Counter]["ID"]);
+                    for i = 1, 3 do MacroStatusLines[i]:SetVisible(true); end
+                end
+            end)
 
             -- Condition Check
             if not ValidateCondition(MacroData[Counter]["Condition"]) then continue; end
 
-            -- Cooldown Check
-            if LocalPlayer:FindFirstChild("PlacementCooldowns") then
-                if LocalPlayer["PlacementCooldowns"]:FindFirstChild(MacroData[Counter]["Unit"].."/1") then continue; end
-            end
-
             if MacroData[Counter]["Task"] == "PlaceUnit" then
+                -- Cooldown Check
+                if LocalPlayer:FindFirstChild("PlacementCooldowns") then
+                    if LocalPlayer["PlacementCooldowns"]:FindFirstChild(MacroData[Counter]["Unit"].."/1") then continue; end
+                end
+
                 local number = tonumber(Options["RandomPlacementOffset"].Value);
                 local randomVector = Vector3.new(
                     -number + (number - (-number)) * math.random(),
                     0 + (1 - 0) * math.random(),
                     -number + (number - (-number)) * math.random()
-                )
+                );
                 local NewData = {
                     Valid = true,
                     Position = Vector3.new(unpack(MacroData[Counter]["Data"]["Position"])) + randomVector,
                     CF = CFrame.new(unpack(MacroData[Counter]["Data"]["CF"])) + randomVector,
                     Rotation = MacroData[Counter]["Data"]["Rotation"]
-                }
+                };
                 if MacroData[Counter]["Data"]["PathIndex"] then NewData["PathIndex"] = MacroData[Counter]["Data"]["PathIndex"]; end
                 if MacroData[Counter]["Data"]["DistanceAlongPath"] then NewData["DistanceAlongPath"] = MacroData[Counter]["Data"]["DistanceAlongPath"]; end
                 local valid, id = REMOTEFUNCTIONS_FOLDER["PlaceUnit"]:InvokeServer(MacroData[Counter]["Unit"], NewData);
                 if not valid then continue; end
-                for _, entity in (MAP_FOLDER:FindFirstChild("Entities"):GetChildren()) do
-                    if tonumber(entity:GetAttribute("ID")) == id then
-                        PlacedUnits[MacroData[Counter]["ID"]] = {
-                            ["Object"] = entity,
-                            ["ID"] = id
-                        };
-                        break;
+                task.wait();
+                repeat
+                    for _, entity in (MAP_FOLDER:FindFirstChild("Entities"):GetChildren()) do
+                        local entityNameSplit = entity.Name:split("_");
+                        if entityNameSplit[1] == "enemy" then continue; end
+                        if tonumber(entity:GetAttribute("ID")) == id then
+                            PlacedUnits[MacroData[Counter]["ID"]] = {
+                                ["Entity"] = entity,
+                                ["ID"] = id
+                            };
+                            break;
+                        end
                     end
-                end
+                    task.wait();
+                until PlacedUnits[MacroData[Counter]["ID"]] ~= nil
             elseif MacroData[Counter]["Task"] == "UpgradeUnit" then
+                -- Valid Unit Check
                 if PlacedUnits[MacroData[Counter]["ID"]] == nil then continue; end
+
                 local valid = true;
-                for upgrades = 1, MacroData[Counter]["Upgrades"] do
+                for _ = 1, MacroData[Counter]["Upgrades"] do
                     local success = REMOTEFUNCTIONS_FOLDER["UpgradeUnit"]:InvokeServer(tonumber(PlacedUnits[MacroData[Counter]["ID"]]["ID"]))
                     if not success then valid = false; break; end
-                    task.wait(0.5);
+                    task.wait(0.1);
                 end
-                if not valid then break; end
+                if not valid then continue; end
             elseif MacroData[Counter]["Task"] == "UpgradeAll" then
 
             elseif MacroData[Counter]["Task"] == "SellUnit" then
+                -- Valid Unit Check
                 if PlacedUnits[MacroData[Counter]["ID"]] == nil then continue; end
+
                 local valid = REMOTEFUNCTIONS_FOLDER["SellUnit"]:InvokeServer(tonumber(PlacedUnits[MacroData[Counter]["ID"]]["ID"]));
                 if not valid then continue; end
             elseif MacroData[Counter]["Task"] == "SellAll" then
