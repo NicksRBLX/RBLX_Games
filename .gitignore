@@ -1,6 +1,6 @@
 # File Type
 *.raw.lua
-obf.lua
 
-# Directory
-/prometheus/*
+# Directories
+.vscode/*
+.rmv/*
