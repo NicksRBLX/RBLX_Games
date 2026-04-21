@@ -1,7 +1,5 @@
 # File Type
 *.raw.lua
-.gitattributes
-.gitignore
 
 # Directories
 .vscode/*
