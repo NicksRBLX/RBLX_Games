@@ -33,6 +33,7 @@ local SaveManager = loadstring(game:HttpGet(ObsidianRepo .. "addons/SaveManager.
 
 local DATA_LIBRARY = loadstring(game:HttpGet("https://raw.githubusercontent.com/NicksRBLX/RBLX_Datas/refs/heads/master/GardenTowerDefense/DATA.lua"))();
 local UTILITY_LIBRARY = loadstring(game:HttpGet("https://raw.githubusercontent.com/NicksRBLX/RBLX_Modules/refs/heads/master/UtilityModule.lua"))();
+local WEBHOOK_LIBRARY = loadstring(game:HttpGet("https://raw.githubusercontent.com/NicksRBLX/RBLX_Modules/refs/heads/master/WebhookModule.lua"))();
 
 local HUBPATH = "NeoPulse";
 local SAVEPATH = "GardenTowerDefense";
@@ -122,6 +123,7 @@ local Tabs = {
     Inventory = Window:AddTab("Inventory", "backpack"),
 	Shop = Window:AddTab("Shop", "shopping-cart"),
     Events = Window:AddTab("Events", "calendars"),
+    Webhook = Window:AddTab("Webhook", "link"),
     ["UI Settings"] = Window:AddTab("Settings", "settings"),
 };
 
@@ -414,6 +416,37 @@ EasterBox:AddDropdown("AutoCollectEggsBlacklist", {
     Multi = true,
     Searchable = true,
     MaxVisibleDropdownItems = 15,
+});
+
+-- ═══════════════════════════════════════════════════════════════
+-- WEBHOOK TAB
+-- ═══════════════════════════════════════════════════════════════
+
+local WebhookSettingsBox = Tabs.Webhook:AddLeftGroupbox("Settings");
+local WebhookTogglesBox = Tabs.Webhook:AddRightGroupbox("Toggles");
+
+-- ── Webhook Settings ───────────────────────────────────────────
+WebhookSettingsBox:AddInput("WebhookURL", {
+    Text = "Webhook URL",
+    Placeholder = "https://discord.com/api/webhooks/...",
+    Default = "",
+});
+WebhookSettingsBox:AddToggle("EnableWebhook", {
+    Text = "Enable Webhook",
+    Default = false,
+});
+WebhookSettingsBox:AddDivider();
+WebhookSettingsBox:AddButton({
+    Text = "Test Webhook",
+    Func = function()
+        if not Toggles["EnableWebhook"].Value then return; end
+    end
+});
+
+-- ── Webhook Toggles ────────────────────────────────────────────
+WebhookTogglesBox:AddCheckbox("WebhookMacro", {
+    Text = "Webhook Macro",
+    Default = false,
 });
 
 -- ═══════════════════════════════════════════════════════════════
